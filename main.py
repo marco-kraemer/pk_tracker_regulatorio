@@ -3,7 +3,7 @@ PK Tracker Regulatório — protótipo (modo demo).
 
 Fluxo:
     [1/3] Carrega atualizações regulatórias (dados de demo).
-    [2/3] Analisa cada uma com um modelo Qwen (resumo, categoria, urgência).
+    [2/3] Analisa cada uma com um modelo local via Ollama (resumo, categoria, urgência).
     [3/3] Gera relatórios em JSON e Markdown na pasta output/.
 
 Uso:
@@ -13,15 +13,19 @@ Uso:
 
 import argparse
 import os
-import sys
-
-from dotenv import load_dotenv
 
 from tracker.analyzer import analyze_all
 from tracker.data import get_sample_items
 from tracker.reporter import save_json, save_markdown
 
 OUTPUT_DIR = "output"
+
+# Padrões: modelo local servido pelo Ollama, via endpoint OpenAI-compatible.
+# Não é preciso arquivo de configuração nem chave de API — roda out of the box.
+# Para trocar de modelo/endpoint, exporte as variáveis de ambiente LLM_* (opcionais).
+DEFAULT_BASE_URL = "http://localhost:11434/v1"
+DEFAULT_API_KEY = "ollama"  # o Ollama ignora a chave, mas o SDK exige um valor
+DEFAULT_MODEL = "llama3.2:1b"
 
 
 def parse_args() -> argparse.Namespace:
@@ -35,22 +39,14 @@ def parse_args() -> argparse.Namespace:
 
 
 def load_config() -> tuple[str, str, str]:
-    """Lê as variáveis do .env e valida a presença da API key."""
-    load_dotenv()
-    api_key = os.getenv("QWEN_API_KEY")
-    base_url = os.getenv("QWEN_BASE_URL")
-    model = os.getenv("QWEN_MODEL")
+    """Resolve a configuração do modelo, com fallback para os padrões do Ollama.
 
-    if not api_key or api_key == "your_key_here" or not base_url or not model:
-        print(
-            "ERRO: configuração incompleta.\n"
-            "Copie o arquivo de exemplo e preencha as variáveis:\n"
-            "    cp .env.example .env\n"
-            "Depois escolha um provedor (DashScope ou Ollama) no .env.",
-            file=sys.stderr,
-        )
-        sys.exit(1)
-
+    Sem nenhuma configuração, o projeto já roda contra o Ollama local. As variáveis
+    de ambiente LLM_* (opcionais) permitem apontar para outro modelo ou endpoint.
+    """
+    api_key = os.getenv("LLM_API_KEY", DEFAULT_API_KEY)
+    base_url = os.getenv("LLM_BASE_URL", DEFAULT_BASE_URL)
+    model = os.getenv("LLM_MODEL", DEFAULT_MODEL)
     return api_key, base_url, model
 
 
