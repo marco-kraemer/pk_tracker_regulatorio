@@ -135,11 +135,46 @@ E o mesmo item na saída JSON (`output/report_AAAA-MM-DD.json`), pronta para int
 }
 ```
 
-> **Sobre a qualidade da classificação:** o modelo padrão (`llama3.2:1b`) foi escolhido
-> para **rodar em qualquer máquina** com um comando — é leve e rápido, mas conservador
-> na urgência (tende a marcar itens como Alto). A triagem fica bem mais precisa com um
-> modelo maior; veja *[Trocar de modelo](#trocar-de-modelo)*. Os resumos e categorias
-> já saem consistentes mesmo no modelo leve.
+---
+
+## Sobre a escolha do modelo e a qualidade da triagem
+
+Esta é uma decisão de projeto consciente, então vale explicá-la com clareza.
+
+**A prioridade aqui foi "clonar e rodar em qualquer máquina com um comando".** Para
+isso, o modelo padrão é o `llama3.2:1b` — um modelo pequeno (~1,3 GB) que roda em CPU,
+sem GPU, com pouca RAM, e responde rápido. Ele foi escolhido justamente por ser o
+denominador comum que **funciona out of the box** na maior variedade de máquinas.
+
+**Esse modelo pequeno tem um limite claro: a classificação de urgência.** Nos testes,
+o `llama3.2:1b` produz resumos e categorias consistentes, mas é **conservador na
+urgência** — tende a marcar quase tudo como 🔴 Alto, em vez de distribuir bem entre
+Alto / Médio / Baixo. A rubrica de urgência está no prompt (com critérios e exemplos),
+mas um modelo de 1B de parâmetros simplesmente não tem capacidade de raciocínio para
+aplicar essa distinção de forma fina. É uma limitação **do modelo**, não do pipeline: o
+código monta o prompt certo, chama o modelo e normaliza a resposta corretamente.
+
+**A triagem melhora muito com um modelo maior** — e trocar é trivial, porque o acesso é
+por interface OpenAI-compatible e o modelo é configurável por variável de ambiente
+(sem tocar no código):
+
+```bash
+# Modelo local maior — triagem de urgência bem mais precisa (exige mais RAM):
+export LLM_MODEL=llama3.2:3b
+make run
+
+# Ou qualquer endpoint hospedado compatível com a API da OpenAI:
+export LLM_BASE_URL=https://...
+export LLM_API_KEY=sua_key
+export LLM_MODEL=nome-do-modelo
+make run
+```
+
+**Por que não deixar o 3b como padrão?** Porque um modelo maior exige mais RAM e pode
+travar ou ficar lento em máquinas modestas — o que quebraria a promessa de "clonar e
+rodar sem pensar". A escolha é um trade-off explícito entre **rodar em qualquer lugar**
+(padrão leve) e **melhor qualidade de raciocínio** (modelo maior, sob demanda). A
+arquitetura foi feita para que essa troca seja de uma linha.
 
 ---
 
@@ -163,23 +198,9 @@ main.py                 Orquestra o fluxo em 3 etapas (carregar → analisar →
   priorizado por urgência para consumo por pessoa.
 
 Como o acesso ao modelo é por interface OpenAI-compatible, a lógica **independe do
-provedor**: hoje aponta para o Ollama local; trocar para um modelo em nuvem é só mudar
-as variáveis de ambiente, sem tocar no código.
-
-### Trocar de modelo
-
-Os padrões (Ollama local, modelo `llama3.2:1b`) estão no código e funcionam sem
-configuração. Para usar outro modelo ou endpoint, basta exportar as variáveis:
-
-```bash
-# Um modelo local maior (triagem mais precisa; exige mais RAM):
-export LLM_MODEL=llama3.2:3b
-
-# Ou qualquer endpoint compatível com a API da OpenAI:
-export LLM_BASE_URL=https://...
-export LLM_API_KEY=sua_key
-export LLM_MODEL=nome-do-modelo
-```
+provedor**: hoje aponta para o Ollama local; trocar para um modelo maior ou para um
+endpoint em nuvem é só mudar as variáveis de ambiente `LLM_*`, sem tocar no código
+(veja *[Sobre a escolha do modelo](#sobre-a-escolha-do-modelo-e-a-qualidade-da-triagem)*).
 
 ---
 
