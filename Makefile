@@ -1,27 +1,28 @@
 # PK Tracker Regulatório — automação de setup e execução.
 #
-# Uso mais comum:
-#   make run     -> prepara tudo (venv + deps + .env) e roda o pipeline
+# Uso mais comum (clonou -> rodou -> pronto):
+#   make run     -> prepara tudo (venv + deps + modelo local) e roda o pipeline
 #
 # Outros alvos úteis:
-#   make setup   -> só prepara o ambiente (venv + deps)
-#   make env     -> cria o .env a partir do .env.example (se não existir)
+#   make setup   -> só prepara o ambiente Python (venv + deps)
+#   make model   -> garante que o modelo do Ollama está baixado
 #   make clean   -> remove venv, __pycache__ e relatórios gerados
 #   make help    -> lista os alvos
 
 VENV    := .venv
 PYTHON  := $(VENV)/bin/python
 PIP     := $(VENV)/bin/pip
+MODEL   := llama3.2:1b
 
 .DEFAULT_GOAL := help
-.PHONY: run setup env clean help
+.PHONY: run setup model clean help
 
-## run: prepara o ambiente e roda o pipeline do começo ao fim
-run: setup env
+## run: prepara o ambiente + modelo e roda o pipeline do começo ao fim
+run: setup model
 	@echo ">> Rodando o pipeline..."
 	@$(PYTHON) main.py
 
-## setup: cria a virtualenv e instala as dependências
+## setup: cria a virtualenv e instala as dependências Python
 setup: $(VENV)/.installed
 
 $(VENV)/.installed: requirements.txt
@@ -32,16 +33,16 @@ $(VENV)/.installed: requirements.txt
 	@touch $(VENV)/.installed
 	@echo ">> Ambiente pronto."
 
-## env: cria o .env a partir do exemplo (se ainda não existir)
-env:
-	@if [ ! -f .env ]; then \
-		cp .env.example .env; \
-		echo ">> .env criado a partir de .env.example."; \
-		echo ">> ATENÇÃO: edite o .env e preencha QWEN_API_KEY antes de rodar."; \
-		echo "   (ou configure o Ollama local — veja o README)"; \
-	else \
-		echo ">> .env já existe, mantido."; \
-	fi
+## model: garante que o Ollama está instalado e o modelo baixado
+model:
+	@command -v ollama >/dev/null 2>&1 || { \
+		echo "ERRO: Ollama não encontrado."; \
+		echo "Instale com:  curl -fsSL https://ollama.com/install.sh | sh"; \
+		echo "(macOS/Windows: baixe em https://ollama.com/download)"; \
+		exit 1; \
+	}
+	@echo ">> Garantindo o modelo '$(MODEL)' (baixa só na primeira vez)..."
+	@ollama pull $(MODEL)
 
 ## clean: remove venv, caches e relatórios gerados
 clean:
