@@ -36,7 +36,7 @@ def _build_user_prompt(item: dict) -> str:
         "exatamente estas chaves (valores em texto simples, nunca listas):\n"
         '- "resumo": 2 a 3 frases resumindo a atualização para um advogado ocupado.\n'
         f'- "categoria": UMA única string, a mais relevante, entre {list(CATEGORIAS)}.\n'
-        '- "urgencia": exatamente uma palavra — "Alto", "Médio" ou "Baixo".\n'
+        '- "urgencia": exatamente uma palavra - "Alto", "Médio" ou "Baixo".\n'
         '- "justificativa_urgencia": 1 frase justificando o nível de urgência.\n'
         '- "impacto_pratico": 1 frase sobre o impacto prático para clientes da banca.\n\n'
         "Como decidir a urgência (escolha o nível mais alto que se aplica):\n"

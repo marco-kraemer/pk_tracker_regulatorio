@@ -1,4 +1,4 @@
-# PK Tracker Regulatório — automação de setup e execução.
+# PK Tracker Regulatório - automação de setup e execução.
 #
 # Uso mais comum (clonou -> rodou -> pronto):
 #   make run     -> prepara tudo (venv + deps + modelo local) e roda o pipeline

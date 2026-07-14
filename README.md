@@ -2,9 +2,9 @@
 
 Protótipo de um **tracker regulatório com IA**: coleta atualizações de órgãos
 reguladores, resume cada uma em linguagem jurídica objetiva, classifica por área e
-**prioriza por urgência** — entregando um relatório pronto para leitura.
+**prioriza por urgência**, entregando um relatório pronto para leitura.
 
-> Construído como projeto de demonstração para a vaga de *Desenvolvedor Júnior — IA
+> Construído como projeto de demonstração para a vaga de *Desenvolvedor Júnior de IA
 > Aplicada* do **PK Advogados**, atacando diretamente o primeiro item da lista de
 > projetos: *"Tracker regulatório automatizado com agentes que monitoram ANPD, CADE,
 > BCB, MCTI, União Europeia e jurisprudência relevante."*
@@ -17,7 +17,7 @@ Uma banca que atua em direito digital precisa acompanhar, todos os dias, o que s
 ANPD, do CADE, do BCB, do MCTI e da União Europeia. Hoje isso costuma ser feito
 **manualmente**: alguém abre cada site, lê os comunicados e tenta julgar o que é
 urgente. Isso consome horas de profissionais caros, a informação chega tarde, e não há
-priorização — uma multa recém-aplicada e uma nota técnica informativa chegam no mesmo
+priorização: uma multa recém-aplicada e uma nota técnica informativa chegam no mesmo
 balaio.
 
 ## A solução
@@ -31,7 +31,7 @@ Um pipeline que, para cada atualização regulatória:
 4. Aponta o **impacto prático** para clientes;
 5. Gera um **relatório estruturado** em JSON (para integrações) e Markdown (para leitura).
 
-O resultado é um relatório que já chega **triado** — o profissional lê primeiro o que
+O resultado é um relatório que já chega **triado**: o profissional lê primeiro o que
 é urgente, em vez de garimpar site por site.
 
 ---
@@ -80,7 +80,7 @@ Rodando o pipeline:
 ```console
 $ make run
 ================================================================
- PK Tracker Regulatório — protótipo (modo demo)
+ PK Tracker Regulatório (protótipo demo)
 ================================================================
 
 [1/3] Carregando atualizações regulatórias...
@@ -114,7 +114,7 @@ Um item do relatório Markdown gerado (`output/report_AAAA-MM-DD.md`):
 >
 > - **Impacto prático:** Os clientes da banca devem ser alertados sobre o tema e revisar
 >   suas próprias bases legais de tratamento de dados.
-> - **Por que esta urgência:** Sanção já aplicada — sinaliza fiscalização ativa da ANPD
+> - **Por que esta urgência:** Sanção já aplicada, sinaliza fiscalização ativa da ANPD
 >   sobre esse tipo de prática.
 > - **Fonte original:** https://www.gov.br/anpd/pt-br/exemplo/multa-marketing
 
@@ -129,7 +129,7 @@ E o mesmo item na saída JSON (`output/report_AAAA-MM-DD.json`), pronta para int
     "resumo": "A ANPD aplica sanção pecuniária à empresa de marketing digital por uso irregular de dados pessoais...",
     "categoria": "Proteção de Dados (LGPD)",
     "urgencia": "Alto",
-    "justificativa_urgencia": "Sanção já aplicada — sinaliza fiscalização ativa.",
+    "justificativa_urgencia": "Sanção já aplicada, sinaliza fiscalização ativa.",
     "impacto_pratico": "Clientes devem revisar suas bases legais de tratamento."
   }
 }
@@ -142,24 +142,24 @@ E o mesmo item na saída JSON (`output/report_AAAA-MM-DD.json`), pronta para int
 Esta é uma decisão de projeto consciente, então vale explicá-la com clareza.
 
 **A prioridade aqui foi "clonar e rodar em qualquer máquina com um comando".** Para
-isso, o modelo padrão é o `llama3.2:1b` — um modelo pequeno (~1,3 GB) que roda em CPU,
+isso, o modelo padrão é o `llama3.2:1b`, um modelo pequeno (~1,3 GB) que roda em CPU,
 sem GPU, com pouca RAM, e responde rápido. Ele foi escolhido justamente por ser o
 denominador comum que **funciona out of the box** na maior variedade de máquinas.
 
 **Esse modelo pequeno tem um limite claro: a classificação de urgência.** Nos testes,
 o `llama3.2:1b` produz resumos e categorias consistentes, mas é **conservador na
-urgência** — tende a marcar quase tudo como 🔴 Alto, em vez de distribuir bem entre
+urgência**: tende a marcar quase tudo como 🔴 Alto, em vez de distribuir bem entre
 Alto / Médio / Baixo. A rubrica de urgência está no prompt (com critérios e exemplos),
 mas um modelo de 1B de parâmetros simplesmente não tem capacidade de raciocínio para
 aplicar essa distinção de forma fina. É uma limitação **do modelo**, não do pipeline: o
 código monta o prompt certo, chama o modelo e normaliza a resposta corretamente.
 
-**A triagem melhora muito com um modelo maior** — e trocar é trivial, porque o acesso é
+**A triagem melhora muito com um modelo maior**, e trocar é trivial, porque o acesso é
 por interface OpenAI-compatible e o modelo é configurável por variável de ambiente
 (sem tocar no código):
 
 ```bash
-# Modelo local maior — triagem de urgência bem mais precisa (exige mais RAM):
+# Modelo local maior, triagem de urgência bem mais precisa (exige mais RAM):
 export LLM_MODEL=llama3.2:3b
 make run
 
@@ -171,7 +171,7 @@ make run
 ```
 
 **Por que não deixar o 3b como padrão?** Porque um modelo maior exige mais RAM e pode
-travar ou ficar lento em máquinas modestas — o que quebraria a promessa de "clonar e
+travar ou ficar lento em máquinas modestas, o que quebraria a promessa de "clonar e
 rodar sem pensar". A escolha é um trade-off explícito entre **rodar em qualquer lugar**
 (padrão leve) e **melhor qualidade de raciocínio** (modelo maior, sob demanda). A
 arquitetura foi feita para que essa troca seja de uma linha.
@@ -193,7 +193,7 @@ main.py                 Orquestra o fluxo em 3 etapas (carregar → analisar →
 - **`analyzer.py`** monta um prompt com rubrica de urgência, chama o modelo via uma
   interface **OpenAI-compatible** e normaliza a resposta (garante que `categoria` e
   `urgencia` sejam sempre strings válidas, mesmo se o modelo desviar do formato). Uma
-  falha em um item não derruba o lote — ele degrada com um marcador de erro.
+  falha em um item não derruba o lote; ele degrada com um marcador de erro.
 - **`reporter.py`** gera dois artefatos: um JSON para consumo por máquina e um Markdown
   priorizado por urgência para consumo por pessoa.
 
@@ -228,8 +228,8 @@ endpoint em nuvem é só mudar as variáveis de ambiente `LLM_*`, sem tocar no c
 Este projeto foi construído em poucas horas para **demonstrar a abordagem técnica**, não
 como produto acabado. Em particular:
 
-- **Os dados são fixos (modo demo).** Em vez de fazer scraping ao vivo — frágil e fora
-  do escopo de um protótipo — os itens vêm de [`tracker/data.py`](tracker/data.py). Isso
+- **Os dados são fixos (modo demo).** Em vez de fazer scraping ao vivo, frágil e fora
+  do escopo de um protótipo, os itens vêm de [`tracker/data.py`](tracker/data.py). Isso
   garante que o projeto **roda de forma reprodutível**, sem depender de sites instáveis.
   A camada de coleta é a única que precisaria mudar para ir a produção.
 

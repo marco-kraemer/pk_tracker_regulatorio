@@ -1,5 +1,5 @@
 """
-PK Tracker Regulatório — protótipo (modo demo).
+PK Tracker Regulatório (protótipo demo).
 
 Fluxo:
     [1/3] Carrega atualizações regulatórias (dados de demo).
@@ -21,7 +21,7 @@ from tracker.reporter import save_json, save_markdown
 OUTPUT_DIR = "output"
 
 # Padrões: modelo local servido pelo Ollama, via endpoint OpenAI-compatible.
-# Não é preciso arquivo de configuração nem chave de API — roda out of the box.
+# Não é preciso arquivo de configuração nem chave de API; roda out of the box.
 # Para trocar de modelo/endpoint, exporte as variáveis de ambiente LLM_* (opcionais).
 DEFAULT_BASE_URL = "http://localhost:11434/v1"
 DEFAULT_API_KEY = "ollama"  # o Ollama ignora a chave, mas o SDK exige um valor
@@ -55,7 +55,7 @@ def main() -> None:
     api_key, base_url, model = load_config()
 
     print("=" * 64)
-    print(" PK Tracker Regulatório — protótipo (modo demo)")
+    print(" PK Tracker Regulatório (protótipo demo)")
     print("=" * 64)
 
     print("\n[1/3] Carregando atualizações regulatórias...")

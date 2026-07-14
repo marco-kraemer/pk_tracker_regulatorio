@@ -50,7 +50,7 @@ def save_markdown(items: list[dict], output_dir: str) -> str:
         contagem[_urgencia_de(it)] = contagem.get(_urgencia_de(it), 0) + 1
 
     linhas: list[str] = []
-    linhas.append("# 📋 Tracker Regulatório — Relatório Diário")
+    linhas.append("# 📋 Tracker Regulatório - Relatório Diário")
     linhas.append("")
     linhas.append(f"**Gerado em:** {datetime.now().strftime('%d/%m/%Y %H:%M')}  ")
     linhas.append(f"**Total de atualizações:** {len(items)}")
@@ -75,15 +75,15 @@ def save_markdown(items: list[dict], output_dir: str) -> str:
         linhas.append("")
         linhas.append(
             f"**Fonte:** {it['source']}  |  "
-            f"**Categoria:** {analysis.get('categoria', '—')}  |  "
+            f"**Categoria:** {analysis.get('categoria', '-')}  |  "
             f"**Urgência:** {emoji} {urgencia}"
         )
         linhas.append("")
         linhas.append(f"{analysis.get('resumo', it['summary'])}")
         linhas.append("")
-        linhas.append(f"- **Impacto prático:** {analysis.get('impacto_pratico', '—')}")
+        linhas.append(f"- **Impacto prático:** {analysis.get('impacto_pratico', '-')}")
         linhas.append(
-            f"- **Por que esta urgência:** {analysis.get('justificativa_urgencia', '—')}"
+            f"- **Por que esta urgência:** {analysis.get('justificativa_urgencia', '-')}"
         )
         linhas.append(f"- **Fonte original:** [{it['url']}]({it['url']})")
         linhas.append("")
