@@ -37,14 +37,37 @@ o que é urgente.
 
 ## Como rodar
 
+Com **Make**, um único comando prepara tudo (virtualenv, dependências e `.env`) e
+roda o pipeline do começo ao fim:
+
 ```bash
 git clone <este-repo>
 cd pk_project
+make run
+```
+
+Na primeira vez, o `make run` cria o `.env` a partir do exemplo e avisa para você
+preencher a chave (ou apontar para um Ollama local — veja abaixo). Depois de
+configurar o `.env`, rode `make run` de novo para gerar os relatórios.
+
+Outros alvos:
+
+```bash
+make setup   # só prepara o ambiente (venv + dependências)
+make clean   # remove venv, caches e relatórios gerados
+make help    # lista todos os alvos
+```
+
+<details>
+<summary>Prefere rodar sem Make?</summary>
+
+```bash
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env      # depois edite o .env (veja abaixo)
 python main.py
 ```
+</details>
 
 Os relatórios são gerados em `output/report_AAAA-MM-DD.json` e `.md`.
 
