@@ -1,9 +1,10 @@
 """
 Pipeline de análise com LLM.
 
-Cada atualização regulatória é enviada a um modelo Qwen (via endpoint
-OpenAI-compatible) que devolve um resumo jurídico objetivo, uma categoria, um nível
-de urgência e o impacto prático para clientes. A saída é sempre um JSON estruturado.
+Cada atualização regulatória é enviada a um modelo local servido pelo Ollama (via
+endpoint OpenAI-compatible) que devolve um resumo jurídico objetivo, uma categoria,
+um nível de urgência e o impacto prático para clientes. A saída é sempre um JSON
+estruturado.
 """
 
 import json
@@ -31,21 +32,55 @@ CATEGORIAS = (
 
 def _build_user_prompt(item: dict) -> str:
     return (
-        "Analise a seguinte atualização regulatória e retorne um objeto JSON com "
-        "exatamente estas chaves:\n"
+        "Analise a atualização regulatória abaixo e retorne UM objeto JSON com "
+        "exatamente estas chaves (valores em texto simples, nunca listas):\n"
         '- "resumo": 2 a 3 frases resumindo a atualização para um advogado ocupado.\n'
-        f'- "categoria": uma de {list(CATEGORIAS)}.\n'
-        '- "urgencia": "Alto", "Médio" ou "Baixo".\n'
+        f'- "categoria": UMA única string, a mais relevante, entre {list(CATEGORIAS)}.\n'
+        '- "urgencia": exatamente uma palavra — "Alto", "Médio" ou "Baixo".\n'
         '- "justificativa_urgencia": 1 frase justificando o nível de urgência.\n'
         '- "impacto_pratico": 1 frase sobre o impacto prático para clientes da banca.\n\n'
-        "Critérios de urgência:\n"
-        "- Alto: prazo iminente, sanção já aplicada, ou norma com vigência imediata.\n"
-        "- Médio: consulta pública aberta ou decisão relevante sem prazo imediato.\n"
-        "- Baixo: conteúdo informativo, sem prazo ou ação exigida.\n\n"
+        "Como decidir a urgência (escolha o nível mais alto que se aplica):\n"
+        "- Alto: sanção JÁ aplicada; norma em vigor imediata; ou votação/decisão "
+        "marcada para os próximos dias.\n"
+        "- Médio: consulta pública aberta com prazo para contribuição; inquérito ou "
+        "processo em curso sem dever imediato para clientes.\n"
+        "- Baixo: nota técnica ou orientação informativa; decisão já encerrada que "
+        "não cria novo dever imediato.\n\n"
+        "Exemplos:\n"
+        '- "multa aplicada pela ANPD" -> Alto.\n'
+        '- "consulta pública aberta por 30 dias" -> Médio.\n'
+        '- "nota técnica esclarecendo critérios, sem prazo" -> Baixo.\n\n'
         f"Órgão: {item['source']}\n"
         f"Título: {item['title']}\n"
         f"Descrição: {item['summary']}\n"
     )
+
+
+def _normalize_analysis(analysis: dict) -> dict:
+    """Torna a resposta do modelo robusta: coage listas em texto e limpa a urgência.
+
+    Modelos menores às vezes devolvem `categoria` como lista ou `urgencia` com texto
+    extra. Aqui garantimos strings simples para o relatório não vazar estruturas.
+    """
+    def _to_text(value) -> str:
+        if isinstance(value, list):
+            return ", ".join(str(v) for v in value)
+        return str(value).strip()
+
+    categoria = _to_text(analysis.get("categoria", "Outros"))
+
+    urgencia_raw = _to_text(analysis.get("urgencia", "Médio"))
+    urgencia = "Médio"
+    for nivel in ("Alto", "Médio", "Baixo"):
+        if nivel.lower() in urgencia_raw.lower():
+            urgencia = nivel
+            break
+
+    return {
+        **analysis,
+        "categoria": categoria,
+        "urgencia": urgencia,
+    }
 
 
 def _extract_json(text: str) -> dict:
@@ -67,10 +102,10 @@ def analyze_item(client: OpenAI, model: str, item: dict) -> dict:
             {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user", "content": _build_user_prompt(item)},
         ],
-        temperature=0.2,
+        temperature=0,
         response_format={"type": "json_object"},
     )
-    analysis = _extract_json(response.choices[0].message.content)
+    analysis = _normalize_analysis(_extract_json(response.choices[0].message.content))
     return {**item, "analysis": analysis}
 
 
